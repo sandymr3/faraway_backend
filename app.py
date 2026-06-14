@@ -115,3 +115,13 @@ async def on_reset(sid, data=None):
 
 # The ASGI entrypoint (uvicorn app:app)
 app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)
+
+
+if __name__ == "__main__":
+    # Single entrypoint that respects env config — works locally and on hosts
+    # whose start command is `python app.py` (HOST/PORT injected via env).
+    import uvicorn
+
+    from config import HOST, PORT
+
+    uvicorn.run("app:app", host=HOST, port=PORT, log_level="info")
