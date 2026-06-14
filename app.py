@@ -1,28 +1,27 @@
 """
 app.py — FastAPI + Socket.io bridge.
 
-Runs the swarm simulation autonomously at 30Hz and streams telemetry to every
-connected dashboard. The frontend is a passive observer that can inject faults
-(EMP / node kill / reset) back over the socket — the decoupled reactive loop
-from PRD §4.
+Runs the swarm simulation autonomously at TICK_HZ and streams telemetry to
+every connected dashboard. The frontend is a passive observer that can inject
+faults (EMP / node kill / reset) back over the socket.
 
-Run:  uvicorn app:app --host 0.0.0.0 --port 8000
+Run:  uvicorn app:app --host $HOST --port $PORT
+Configuration via environment variables — see .env.example.
 """
 from __future__ import annotations
 
-import asyncio
 import time
 from contextlib import asynccontextmanager
 
 import socketio
 from fastapi import FastAPI
 
+from config import CORS_ORIGINS, TICK_HZ
 from sim.swarm import ROSTER, Swarm
 
-TICK_HZ = 30.0
 DT = 1.0 / TICK_HZ
 
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=CORS_ORIGINS)
 swarm = Swarm()
 _clients: set[str] = set()
 
@@ -36,7 +35,7 @@ def world_meta() -> dict:
             {"cx": cx, "cy": cy, "w": w, "h": h} for (cx, cy, w, h) in swarm.world.rects
         ],
         "roster": [{"id": i, "type": k} for (i, k) in ROSTER],
-        "tick_hz": TICK_HZ,
+        "tick_hz": int(TICK_HZ),
     }
 
 
